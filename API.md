@@ -77,8 +77,8 @@
 Например, если хочется изменить начало события и описание, ожидается JSON:
 ```json
 {
-  "start": [New time in format <%Y-%m-%dT%H:%M:%S>],
-  "description": [New description as <string>],
+  "start": "[New time in format <%Y-%m-%dT%H:%M:%S>]",
+  "description": "[New description as <string>]",
 }
 ```
 
