@@ -38,9 +38,9 @@
 В теле запроса ожидается JSON, который описывает новое событие:
 ```json
 {
-  "start": <%Y-%m-%dT%H:%M:%S>,
-  "end": <%Y-%m-%dT%H:%M:%S>,
-  "description": <string>,
+  "start": "%Y-%m-%dT%H:%M:%S",
+  "end": "%Y-%m-%dT%H:%M:%S",
+  "description": "string",
 }
 ```
 Все 3 параметра обязательные.
