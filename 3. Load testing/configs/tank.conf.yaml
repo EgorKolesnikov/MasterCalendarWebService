@@ -7,7 +7,7 @@ phantom:
   ssl: false
   load_profile:
     load_type: rps
-    schedule: constant(8000, 2m)
+    schedule: line(5000, 30000, 2m)
   uris:
     - /hello
 telegraf:
