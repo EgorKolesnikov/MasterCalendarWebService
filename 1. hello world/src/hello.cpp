@@ -3,6 +3,7 @@
 #include <cppcms/service.h>
 #include <cppcms/http_response.h>
 #include <iostream>
+#include <booster/log.h> 
 
 
 class my_hello_world : public cppcms::application {

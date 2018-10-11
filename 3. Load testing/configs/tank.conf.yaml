@@ -1,0 +1,14 @@
+overload:
+  enabled: true
+  package: yandextank.plugins.DataUploader
+  token_file: "/home/kolegor/.yandex_tank/token.txt"
+phantom:
+  address: localhost:8080
+  ssl: false
+  load_profile:
+    load_type: rps
+    schedule: constant(8000, 2m)
+  uris:
+    - /hello
+telegraf:
+  enabled: false
