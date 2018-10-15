@@ -22,7 +22,6 @@ void Calendar::event_create() {
     if(!check_fields_need_all(view)){
         response().status(cppcms::http::response::bad_request);
         response().out() << "Not all fields specified\n";
-        std::cerr << "Not all fields specified\n" << std::endl;
         return;
     }
 
@@ -30,7 +29,6 @@ void Calendar::event_create() {
     if(!check_fields_only_registered(view)){
         response().status(cppcms::http::response::bad_request);
         response().out() << "Found not registered fields in POST json\n";
-        std::cerr << "Found not registered fields in POST json\n" << std::endl;
         return;
     }
 
@@ -38,7 +36,6 @@ void Calendar::event_create() {
     if(!check_time_string(view["start"].get_utf8().value.to_string()) || !check_time_string(view["end"].get_utf8().value.to_string())){
         response().status(cppcms::http::response::bad_request);
         response().out() << "Invalid dates formats\n";
-        std::cerr << "Invalid dates formats\n" << std::endl;
         return;
     }
 
@@ -164,10 +161,54 @@ void Calendar::events_list_get() {
     auto client = this->_mongo_pool->acquire();
     auto collection = (*client)[DB_NAME][DB_COLLECTION];
 
-    // searching for events
-    auto cursor = collection.find({});
+    //
+    //	Extract filter dates range from get params.
+    //	Check extracted dates formats.
+    //
 
-    // construct result json
+    // default dates
+    std::string date_from = "2018-01-01T00:00:00Z";
+    std::string date_to = "2018-12-31T23:59:59Z";
+
+    // extract given values from GET (may be empty)
+    auto get_params = request().get();
+    auto date_from_iter = get_params.find("date_from");
+    auto date_to_iter = get_params.find("date_to");
+
+    // if GET params are not empty - rewrite default values with given values
+    if(date_from_iter != get_params.end()){
+    	date_from = date_from_iter->second;
+    }
+    if(date_to_iter != get_params.end()){
+    	date_to = date_to_iter->second;
+    }
+
+    // check dates formats
+    if(!check_time_string(date_from) || !check_time_string(date_to)){
+        response().status(cppcms::http::response::bad_request);
+        response().out() << "Invalid dates formats\n";
+        return;
+    }
+
+    //
+    //	Extracting all events with "date_from <= start <= date_to"
+    //	(beginning of the event in specified date range)
+    //
+
+    auto cursor = collection.find(
+    	document{} 	<< "start"
+    		   		<< open_document 
+	    			<< "$gte" << date_from
+	    			<< "$lte" << date_to
+		  			<< close_document
+		  			<< finalize
+	);
+
+    //
+    //	Formatting result to json format
+    //	Format: {"events": [{..}, {..}, ...]}
+    //
+
     bsoncxx::builder::stream::document builder{};
     auto in_array = builder << "events" << bsoncxx::builder::stream::open_array;
     for (auto&& doc_view : cursor) {
