@@ -51,7 +51,7 @@ void Calendar::event_create() {
     auto doc_value = document_to_result(uid, copy_view);
 
     // send result
-    response().status(cppcms::http::response::ok);
+    response().status(cppcms::http::response::created);
     response().out() << bsoncxx::to_json(doc_value);
 }
 
@@ -66,12 +66,23 @@ void Calendar::event_get(std::string& uid) {
     auto client = this->_mongo_pool->acquire();
     auto collection = (*client)[DB_NAME][DB_COLLECTION];
 
+    // check given uid format
+    // if bad format - return NOT FOUND code
+    bsoncxx::oid oid;
+    try{
+        oid = bsoncxx::oid(uid);
+    } catch(std::exception const &e) {
+        std::cerr << e.what() << std::endl;
+        response().status(cppcms::http::response::not_found);
+        response().out() << "NOT FOUND " << uid;
+        return;
+    }
+
     // create filter by uid
-    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "_id" << bsoncxx::oid(uid) << finalize);
+    bsoncxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(document{} << "_id" << oid << finalize);
 
     // check if we found needed document
     if(!maybe_result) {
-    	std::cerr << uid << std::endl;
         response().status(cppcms::http::response::not_found);
         response().out() << "NOT FOUND " << uid;
         return;
@@ -120,9 +131,21 @@ void Calendar::event_update(std::string& uid) {
         return;
     }
 
+    // check given uid format
+    // if bad format - return NOT FOUND code
+    bsoncxx::oid oid;
+    try{
+        oid = bsoncxx::oid(uid);
+    } catch(std::exception const &e) {
+        std::cerr << e.what() << std::endl;
+        response().status(cppcms::http::response::not_found);
+        response().out() << "NOT FOUND " << uid;
+        return;
+    }
+
     // DB query filter to search the document which we want to update
     bsoncxx::builder::basic::document filter;
-    filter.append(bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(uid)));
+    filter.append(bsoncxx::builder::basic::kvp("_id", oid));
 
     // new document values to set
     bsoncxx::builder::basic::document update;
@@ -167,8 +190,8 @@ void Calendar::events_list_get() {
     //
 
     // default dates
-    std::string date_from = "2018-01-01T00:00:00Z";
-    std::string date_to = "2018-12-31T23:59:59Z";
+    std::string date_from = "1900-01-01T00:00:00Z";
+    std::string date_to = "3000-12-31T23:59:59Z";
 
     // extract given values from GET (may be empty)
     auto get_params = request().get();

@@ -22,7 +22,7 @@ bsoncxx::document::value document_to_result(const string& uid, const bsoncxx::v_
     bsoncxx::document::value doc_value = builder
                                          << "links" 
                                          << bsoncxx::builder::stream::open_document 
-                                         << "self" << uid
+                                         << "self" << "/event/" + uid + "/"
                                          << bsoncxx::builder::stream::close_document
                                          << "event"
                                          << bsoncxx::builder::stream::open_document
