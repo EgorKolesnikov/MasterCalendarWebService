@@ -3,11 +3,11 @@
         "api" : "http",
         "port" : 8081,
         "worker_processes": 2,
-        "worker_threads": 4,
+        "worker_threads": 2,
         "mod": "thread",
     },
     "logging" : {  
-       "level" : "debug",
+       "level" : "error",
        "stderr": true,
     },
 }
