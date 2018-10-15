@@ -1,0 +1,13 @@
+{
+    "service" : {
+        "api" : "fastcgi",
+        "ip": "127.0.0.1",
+        "port" : 8081
+    },
+    "http" : {
+        "script" : "/hello"
+    },
+    "logging" : {  
+	   "level" : "debug"  
+	} 
+}
