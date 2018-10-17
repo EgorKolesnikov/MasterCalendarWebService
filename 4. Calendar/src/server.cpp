@@ -25,7 +25,7 @@ using bsoncxx::builder::stream::open_document;
 
 int main(int argc, char ** argv){
     try {
-        mongocxx::uri uri{"mongodb://localhost:27017/?minPoolSize=2&maxPoolSize=4"};
+        mongocxx::uri uri{"mongodb://localhost:27017/?minPoolSize=32&maxPoolSize=128"};
         std::shared_ptr<mongocxx::instance> mongo_instance = std::shared_ptr<mongocxx::instance>(new mongocxx::instance{});
         std::shared_ptr<mongocxx::pool> mongo_pool = std::shared_ptr<mongocxx::pool>(new mongocxx::pool{uri});
 

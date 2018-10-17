@@ -230,7 +230,7 @@ def test_modify_not_found():
     assert response.status_code == 404, 'Expected 404 (NOT FOUND), got "{}"'.format(response.status_code)
 
 
-def test_get_list_full():
+def test_get_list_full(create_count=100):
     """
     Things to do:
      - remove all collection documents
@@ -243,7 +243,7 @@ def test_get_list_full():
     _cleanup_testdb()
 
     # post new events
-    events_dicts = _generate_events(100, datetime.now())
+    events_dicts = _generate_events(create_count, datetime.now())
     for event_dict in events_dicts:
         _ = _create_event_with_checks(event_dict)
 
@@ -258,36 +258,6 @@ def test_get_list_full():
     assert loaded == created, 'Number of created and loaded events does not match: {} and {}'.format(created, loaded)
 
 
-def test_get_list_filter(create_count=100, filter_count=50):
-    """
-     - Cleanup test db collections
-     - Create $(create_count) new events
-     - Get start date of the ($(filter_count) - 1)-th event in sorted list
-     - Query for all events less than that date
-     - Should get exactly $(filter_count) events
-    """
-    _cleanup_testdb()
-
-    # post new events
-    events_dicts = _generate_events(create_count, datetime.now())
-    for event_dict in events_dicts:
-        _ = _create_event_with_checks(event_dict)
-
-    # get date of 50-th element
-    events_dicts = sorted(events_dicts, key=lambda x: x['start'])
-    min_date = events_dicts[0]['start']
-    target_date = events_dicts[filter_count - 1]['start']
-
-    # loading list of all events
-    response = _filter_requests(date_from=min_date, date_to=target_date)
-    assert response.status_code == 200, 'Expected 200 (OK) code. Got: {}'.format(response.status_code)
-    loaded_events = json.loads(response.text)
-    count = len(loaded_events['events'])
-
-    # check count
-    assert count == filter_count, 'Expecting to have {} events. Got {}'.format(filter_count, count)
-
-
 #
 #   Run all tests
 #
@@ -300,7 +270,6 @@ TESTS = [
     test_modify_ok,
     test_modify_not_found,
     test_get_list_full,
-    test_get_list_filter,
 ]
 
 def run_test(t):

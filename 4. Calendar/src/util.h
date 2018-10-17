@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <iostream>
 #include <booster/log.h>
+#include <boost/format.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include <cppcms/application.h>
 #include <cppcms/applications_pool.h>
@@ -41,7 +43,6 @@ using std::vector;
 const string DB_NAME = "testdb";
 const string DB_COLLECTION = "testcollection";
 
-
 // expected list of fields for each event
 const vector<string> FIELDS = {
 	"description",
@@ -59,8 +60,11 @@ bool check_fields_only_registered(const bsoncxx::v_noabi::document::view& view);
 // check datetime string format given by user
 bool check_time_string(const string& str);
 
+// difference betwee two string dates in seconds
+int get_dates_difference_seconds(const string& str_time_1, const string& str_time_2);
+
 // convert user POST json to mongodb document
 bsoncxx::v_noabi::document::value post_to_bson(const std::pair<void*, long unsigned int>&);
 
-// convert mongodb document to user view json
-bsoncxx::document::value document_to_result(const string& uid, const bsoncxx::v_noabi::document::view& doc);
+// convert mongodb document to result json object string
+std::string document_to_result(const string& uid, const bsoncxx::v_noabi::document::view& doc);

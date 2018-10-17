@@ -47,12 +47,9 @@ void Calendar::event_create() {
     bsoncxx::stdx::optional<mongocxx::result::insert_one> res = collection.insert_one(std::move(parsed_document));
     string uid = res->inserted_id().get_oid().value.to_string();
 
-    // build the answer
-    auto doc_value = document_to_result(uid, copy_view);
-
     // send result
     response().status(cppcms::http::response::created);
-    response().out() << bsoncxx::to_json(doc_value);
+    response().out() << document_to_result(uid, copy_view);
 }
 
 
@@ -89,9 +86,8 @@ void Calendar::event_get(std::string& uid) {
     }
 
     // found it! send in strict format
-    auto doc_value = document_to_result(uid, *maybe_result);
     response().status(cppcms::http::response::ok);
-    response().out() << bsoncxx::to_json(doc_value);
+    response().out() << document_to_result(uid, *maybe_result);
 }
 
 
@@ -189,42 +185,40 @@ void Calendar::events_list_get() {
     //	Check extracted dates formats.
     //
 
-    // default dates
+    // default date
     std::string date_from = "1900-01-01T00:00:00Z";
-    std::string date_to = "3000-12-31T23:59:59Z";
 
     // extract given values from GET (may be empty)
     auto get_params = request().get();
     auto date_from_iter = get_params.find("date_from");
-    auto date_to_iter = get_params.find("date_to");
 
-    // if GET params are not empty - rewrite default values with given values
+    // if GET param is not empty - rewrite default values with given value
     if(date_from_iter != get_params.end()){
     	date_from = date_from_iter->second;
     }
-    if(date_to_iter != get_params.end()){
-    	date_to = date_to_iter->second;
-    }
 
-    // check dates formats
-    if(!check_time_string(date_from) || !check_time_string(date_to)){
+    // check date formats
+    if(!check_time_string(date_from)){
         response().status(cppcms::http::response::bad_request);
-        response().out() << "Invalid dates formats\n";
+        response().out() << "Invalid filter date formats\n";
         return;
     }
 
     //
-    //	Extracting all events with "date_from <= start <= date_to"
-    //	(beginning of the event in specified date range)
+    //	Extracting all events with "date_from <= start"
     //
+
+    mongocxx::options::find opts;
+	// opts.sort(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("start", 1)));
+	opts.limit(200);
 
     auto cursor = collection.find(
     	document{} 	<< "start"
     		   		<< open_document 
 	    			<< "$gte" << date_from
-	    			<< "$lte" << date_to
 		  			<< close_document
-		  			<< finalize
+		  			<< finalize,
+		opts
 	);
 
     //
@@ -232,21 +226,23 @@ void Calendar::events_list_get() {
     //	Format: {"events": [{..}, {..}, ...]}
     //
 
-    bsoncxx::builder::stream::document builder{};
-    auto in_array = builder << "events" << bsoncxx::builder::stream::open_array;
+    vector<std::string> events_json_strings;
+
     for (auto&& doc_view : cursor) {
         // collection may contain object with different keys
         // need to get only calendar event documents
         try{
-            in_array = in_array << document_to_result(doc_view["_id"].get_oid().value.to_string(), doc_view).view();
+            events_json_strings.push_back(document_to_result(doc_view["_id"].get_oid().value.to_string(), doc_view));
         }
         catch(std::exception const &e) {
             std::cerr << e.what() << std::endl;
         }
     }
-    bsoncxx::document::value doc = in_array << bsoncxx::builder::stream::close_array << bsoncxx::builder::stream::finalize;
+    
+    std::string joined = boost::algorithm::join(events_json_strings, ", ");
+    std::string result = (boost::format("{\"events\": [%s]}") % joined).str();
 
     // send result
     response().status(cppcms::http::response::ok);
-    response().out() << bsoncxx::to_json(doc);
+    response().out() << result;
 }

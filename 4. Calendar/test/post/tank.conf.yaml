@@ -6,7 +6,7 @@ phantom:
   address: localhost:8081
   load_profile:
     load_type: rps
-    schedule: const(5500, 5m)
+    schedule: line(100, 5500, 3m) const(5500, 5m)
   ammo_type: uripost
   ammofile: ammo.txt
 telegraf:

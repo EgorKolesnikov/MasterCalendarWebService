@@ -43,7 +43,7 @@ public:
         dispatcher().map("GET", "/event/([0-9a-z]{24})/", &Calendar::event_get, this, 1);
         dispatcher().map("POST", "/event/([0-9a-z]{24})/", &Calendar::event_update, this, 1);
 
-        // allowing "date_from" and "date_to" GET params 
+        // allowing "date_from" GET param 
         dispatcher().map("GET", "/events/", &Calendar::events_list_get, this);
     }
 

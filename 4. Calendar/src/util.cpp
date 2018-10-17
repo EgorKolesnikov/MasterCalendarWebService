@@ -13,25 +13,34 @@ bool check_time_string(const string& str){
     return true;
 }
 
-bsoncxx::document::value document_to_result(const string& uid, const bsoncxx::v_noabi::document::view& doc_view){
+int get_dates_difference_seconds(const string& str_time_1, const string& str_time_2){
+	/*
+	*	Calculate difference between two given dates.
+	*	Dates given as strings in format %Y-%m-%dT%H:%M:%S
+	*/
+	struct tm tm_from;
+    strptime(str_time_1.c_str(), "%Y-%m-%dT%H:%M:%SZ", &tm_from);
+
+    struct tm tm_to;
+    strptime(str_time_2.c_str(), "%Y-%m-%dT%H:%M:%SZ", &tm_to);
+
+	std::time_t time1 = std::mktime(&tm_from);
+	std::time_t time2 = std::mktime(&tm_to);
+
+	return int(std::difftime(time2, time1));
+}
+
+std::string document_to_result(const string& uid, const bsoncxx::v_noabi::document::view& doc_view){
     /*
     *   Convert given mongodb document to the view, which will be show to user.
     *   Adding hypermedia and removing "_id" field
     */
-    auto builder = bsoncxx::builder::stream::document{};
-    bsoncxx::document::value doc_value = builder
-                                         << "links" 
-                                         << bsoncxx::builder::stream::open_document 
-                                         << "self" << "/event/" + uid + "/"
-                                         << bsoncxx::builder::stream::close_document
-                                         << "event"
-                                         << bsoncxx::builder::stream::open_document
-                                         << "description" << doc_view["description"].get_utf8().value.to_string()
-                                         << "start" << doc_view["start"].get_utf8().value.to_string()
-                                         << "end" << doc_view["end"].get_utf8().value.to_string()
-                                         << bsoncxx::builder::stream::close_document 
-                                         << bsoncxx::builder::stream::finalize;
-    return doc_value;
+    return (boost::format("{\"links\": {\"self\": \"/event/%s/\"}, \"event\": {\"description\": \"%s\", \"start\": \"%s\", \"end\": \"%s\"}}") %
+    	uid
+    	% doc_view["description"].get_utf8().value.to_string()
+    	% doc_view["start"].get_utf8().value.to_string()
+    	% doc_view["end"].get_utf8().value.to_string()
+    ).str();
 }
 
 bsoncxx::v_noabi::document::value post_to_bson(const std::pair<void*, long unsigned int>& raw_post_data){
